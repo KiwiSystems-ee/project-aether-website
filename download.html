@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10130f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'none'; connect-src 'self' https://zpfmzhtkyxewwikkhwgt.supabase.co">
+  <meta name="description" content="Sign in to your Project Aether account to continue to the launcher installer.">
+  <title>Download Project Aether</title>
+  <link rel="icon" type="image/png" href="assets/aether-icon.png">
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script defer src="download.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Project Aether home"><img class="brand-icon" src="assets/aether-icon.png" alt=""><span>PROJECT <b>AETHER</b></span></a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="index.html">Home</a><a href="launcher.html">Launcher</a><a href="community.html">Community</a><a aria-current="page" class="nav-download" href="download.html">Download <span aria-hidden="true">↓</span></a>
+    </nav>
+  </header>
+  <main class="download-page">
+    <section class="download-gate" aria-labelledby="downloadTitle">
+      <img class="download-icon" src="assets/aether-icon.png" alt="">
+      <p class="eyebrow">PROJECT AETHER FOR WINDOWS</p>
+      <h1 id="downloadTitle">Your next world<br><span>is waiting.</span></h1>
+      <p class="download-copy">Sign in to an Aether account to continue to the launcher installer. New here? Create your account first.</p>
+      <p class="download-status" id="downloadStatus" role="status" aria-live="polite">Checking your Aether account…</p>
+      <div id="downloadActions" class="download-actions">
+        <a id="downloadAccountLink" class="button button-primary" href="community.html?return=download">Sign in or create an account <span aria-hidden="true">↗</span></a>
+        <button id="downloadSignOut" class="auth-switch" type="button" hidden>Sign out</button>
+      </div>
+      <p class="download-note">Windows 10 or later · 64-bit · Your local Minecraft worlds stay on your device.</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <a class="brand" href="index.html"><img class="brand-icon" src="assets/aether-icon.png" alt=""><span>PROJECT <b>AETHER</b></span></a>
+    <p>Your worlds, together.</p>
+    <small><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · © Project Aether. Minecraft is a trademark of Mojang Studios.</small>
+  </footer>
+</body>
+</html>
