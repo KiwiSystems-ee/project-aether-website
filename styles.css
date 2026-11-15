@@ -141,6 +141,10 @@ h1, h2, h3, p { margin-top: 0; }
 .site-footer small { text-align: right; font-size: 9px; }
 .legal-page { width: min(760px, calc(100% - 44px)); min-height: calc(100vh - 176px); margin: 70px auto; padding: 45px clamp(22px, 6vw, 65px); border: 1px solid var(--line); border-radius: 10px; background: linear-gradient(145deg, #191e17, #141813); }
 .shop-page { display: grid; align-content: center; text-align: center; }
+.shop-page > p:not(.eyebrow) { margin-bottom: 30px; color: var(--muted); font-size: 14px; }
+.shop-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; text-align: left; }
+.shop-options .feature-card { min-height: 0; }
+.shop-options .feature-card > p:not(.card-index) { min-height: 44px; }
 .legal-page .eyebrow { margin-bottom: 12px; }
 .legal-page h1 { margin-bottom: 10px; font: 750 clamp(36px, 5vw, 56px)/1.1 var(--display); letter-spacing: -.05em; }
 .legal-page .legal-updated { margin-bottom: 31px; color: #879282; font: 10px var(--mono); }
@@ -212,6 +216,7 @@ h1, h2, h3, p { margin-top: 0; }
   .section-wrap { padding: 77px 22px; }
   .section-heading { margin-bottom: 27px; }
   .feature-grid { grid-template-columns: 1fr; gap: 10px; }
+  .shop-options { grid-template-columns: 1fr; }
   .feature-card { min-height: 0; padding: 22px; }
   .feature-icon { margin-bottom: 15px; }
   .social-section { padding: 70px 18px; }
