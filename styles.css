@@ -145,7 +145,7 @@ h1, h2, h3, p { margin-top: 0; }
 .shop-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; text-align: left; }
 .shop-options .feature-card { min-height: 0; }
 .shop-options .feature-card > p:not(.card-index) { min-height: 44px; }
-.shop-page .button-primary { color: #17200f; text-decoration: none; }
+.shop-contact-link { overflow-wrap: anywhere; }
 .legal-page .eyebrow { margin-bottom: 12px; }
 .legal-page h1 { margin-bottom: 10px; font: 750 clamp(36px, 5vw, 56px)/1.1 var(--display); letter-spacing: -.05em; }
 .legal-page .legal-updated { margin-bottom: 31px; color: #879282; font: 10px var(--mono); }
