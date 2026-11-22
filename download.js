@@ -24,12 +24,20 @@
     }
   }
 
+  async function responseError(response, fallback) {
+    const text = await response.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+    const message = data?.msg || data?.message || data?.hint || data?.details || data?.error_description || data?.error;
+    return new Error(message || fallback + " (" + response.status + ").");
+  }
+
   async function fetchCurrentUser(session) {
     const response = await fetch(SUPABASE_URL + "/auth/v1/user", {
       headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + session.access_token }
     });
-    if (response.status === 401) return null;
-    if (!response.ok) throw new Error("Account verification failed (" + response.status + ").");
+    if (response.status === 401 || response.status === 403) return null;
+    if (!response.ok) throw await responseError(response, "Account verification failed");
     return response.json();
   }
 
@@ -40,8 +48,8 @@
       headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: session.refresh_token })
     });
-    if (response.status === 400 || response.status === 401) return null;
-    if (!response.ok) throw new Error("Could not refresh the account session (" + response.status + ").");
+    if (response.status === 400 || response.status === 401 || response.status === 403) return null;
+    if (!response.ok) throw await responseError(response, "Could not refresh the account session");
     return response.json();
   }
 
@@ -83,7 +91,7 @@
       }
       if (!user) {
         saveSession(null);
-        showSignIn("Your session expired. Sign in to your Aether account to continue.");
+        showSignIn("Your session expired or could not be verified. Sign in to your Aether account again to continue.");
         return;
       }
 
