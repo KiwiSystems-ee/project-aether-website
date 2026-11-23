@@ -41,6 +41,31 @@
     return response.json();
   }
 
+  function tokenClaims(accessToken) {
+    try {
+      const payload = accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const binary = atob(payload.padEnd(Math.ceil(payload.length / 4) * 4, "="));
+      const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return {};
+    }
+  }
+
+  async function fetchTotpFactors(session) {
+    const response = await fetch(SUPABASE_URL + "/auth/v1/factors", {
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + session.access_token }
+    });
+    if (!response.ok) throw await responseError(response, "Could not verify authenticator status");
+    const result = await response.json();
+    const all = result.all || result.factors || [
+      ...(result.totp || []),
+      ...(result.phone || []),
+      ...(result.webauthn || [])
+    ];
+    return result.totp || all.filter(factor => factor.factor_type === "totp" || factor.type === "totp");
+  }
+
   async function refreshSession(session) {
     if (!session?.refresh_token) return null;
     const response = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token", {
@@ -98,6 +123,12 @@
       const activeSession = JSON.parse(localStorage.getItem(SESSION_KEY));
       activeSession.user = user;
       saveSession(activeSession);
+      const totpFactors = await fetchTotpFactors(activeSession);
+      const verifiedTotp = totpFactors.some(factor => factor.status === "verified");
+      if (verifiedTotp && tokenClaims(activeSession.access_token).aal !== "aal2") {
+        showSignIn("This account needs an authenticator code before continuing. Return to the community page to verify it, then come back here.");
+        return;
+      }
       showDownloadLink(user);
     } catch (error) {
       showSignIn("Could not verify your account: " + error.message);
@@ -125,3 +156,4 @@
   $("downloadSignOut").addEventListener("click", signOut);
   verifyAccount();
 })();
+
