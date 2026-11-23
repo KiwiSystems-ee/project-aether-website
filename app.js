@@ -106,15 +106,11 @@
   }
 
   async function listTotpFactors() {
-    const result = await api("/auth/v1/factors");
-    const all = result.all || result.factors || [
-      ...(result.totp || []),
-      ...(result.phone || []),
-      ...(result.webauthn || [])
-    ];
+    const user = await api("/auth/v1/user");
+    const all = Array.isArray(user?.factors) ? user.factors : [];
     return {
       all,
-      totp: result.totp || all.filter(factor => factor.factor_type === "totp" || factor.type === "totp")
+      totp: all.filter(factor => factor.factor_type === "totp" || factor.type === "totp")
     };
   }
 
