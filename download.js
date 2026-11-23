@@ -53,17 +53,13 @@
   }
 
   async function fetchTotpFactors(session) {
-    const response = await fetch(SUPABASE_URL + "/auth/v1/factors", {
+    const response = await fetch(SUPABASE_URL + "/auth/v1/user", {
       headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + session.access_token }
     });
     if (!response.ok) throw await responseError(response, "Could not verify authenticator status");
-    const result = await response.json();
-    const all = result.all || result.factors || [
-      ...(result.totp || []),
-      ...(result.phone || []),
-      ...(result.webauthn || [])
-    ];
-    return result.totp || all.filter(factor => factor.factor_type === "totp" || factor.type === "totp");
+    const user = await response.json();
+    const factors = Array.isArray(user?.factors) ? user.factors : [];
+    return factors.filter(factor => factor.factor_type === "totp" || factor.type === "totp");
   }
 
   async function refreshSession(session) {
