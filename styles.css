@@ -83,7 +83,7 @@ h1, h2, h3, p { margin-top: 0; }
 .section-heading > p:last-child { margin-bottom: 0; color: var(--muted); font-size: 14px; }
 .home-explore .feature-card { display: block; }
 .card-link { display: flex; justify-content: space-between; margin-top: 21px; color: var(--green); font-size: 11px; }
-.feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
 .feature-card { min-height: 230px; padding: 27px 25px; border: 1px solid var(--line); border-radius: 9px; background: linear-gradient(145deg, #1a1e18, #151914); }
 .feature-card-highlight { border-color: rgba(183,239,114,.25); background: radial-gradient(ellipse at 82% 0%, rgba(142,195,94,.12), transparent 57%), #191e17; }
 .feature-icon { display: grid; width: 37px; height: 37px; margin-bottom: 21px; place-items: center; border: 1px solid rgba(183,239,114,.3); border-radius: 9px; color: var(--green); font-size: 20px; }
@@ -162,6 +162,11 @@ h1, h2, h3, p { margin-top: 0; }
 .page-hero h1 span { color: var(--green); }
 .page-hero > p:not(.eyebrow) { max-width: 610px; margin: 0 0 25px; color: #aeb8a9; font-size: 15px; line-height: 1.8; }
 .explore-hero { padding-bottom: 76px; }
+.partners-hero { background: radial-gradient(ellipse at 78% 45%, rgba(120,214,165,.13), transparent 34%), radial-gradient(ellipse at 20% 90%, rgba(84,134,54,.12), transparent 35%), #131812; }
+.partners-hero h1 span, .partners-content .section-heading h2 span { color: var(--green); }
+.partners-content { padding-top: 88px; }
+.partner-grid .feature-card { min-height: 225px; }
+.partner-cta { margin-top: 24px; }
 .explore-gallery { padding-top: 76px; }
 .explore-note { max-width: 780px; margin: 0 0 48px; padding: 13px 17px; border-left: 2px solid var(--green); color: #aeb8a9; font-size: 13px; line-height: 1.7; }
 .explore-group { margin: 0 0 62px; }
@@ -223,6 +228,7 @@ h1, h2, h3, p { margin-top: 0; }
   .site-header { height: 65px; padding: 0 20px; }
   .site-nav { gap: 15px; font-size: 11px; }
   .site-nav a:first-child { display: none; }
+  .site-nav a[href="partners.html"] { display: none; }
   .site-nav .nav-explore .nav-label { display: none; }
   .site-nav .nav-download { padding: 9px 10px; }
   .brand { gap: 8px; font-size: 10px; }
