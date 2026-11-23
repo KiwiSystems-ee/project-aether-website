@@ -8,7 +8,7 @@
   <meta name="description" content="Join the Project Aether community to share Minecraft worlds, ask questions, and connect with players.">
   <title>Community — Project Aether</title>
   <link rel="icon" type="image/png" href="assets/aether-icon.png">
-  <link rel="stylesheet" href="styles.css?v=partners-1">
+  <link rel="stylesheet" href="styles.css?v=authenticator-1">
   <script src="config.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -69,24 +69,41 @@
       <h2 id="authTitle">Welcome back.</h2>
       <p class="auth-subtitle" id="authMessage">Sign in to post, reply, and like discussions.</p>
       <p class="auth-error" id="communityAuthError" role="alert" hidden></p>
-      <div id="signupFields" hidden>
-        <label for="communityUsername">Minecraft username</label>
-        <input id="communityUsername" type="text" maxlength="24" autocomplete="nickname" placeholder="How people know you">
-        <label for="communityAgeGroup">Age group</label>
-        <select id="communityAgeGroup"><option value="">Choose one</option><option value="under_18">Under 18</option><option value="18_or_over">18 or over</option></select>
-        <p class="form-note">This is self-declared; we don’t ask for your birth date. It does not change features or options.</p>
-        <label class="agreement"><input id="communityAgreement" type="checkbox"><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and have read the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+      <div id="communityAuthCredentials">
+        <div id="signupFields" hidden>
+          <label for="communityUsername">Minecraft username</label>
+          <input id="communityUsername" type="text" maxlength="24" autocomplete="nickname" placeholder="How people know you">
+          <label for="communityAgeGroup">Age group</label>
+          <select id="communityAgeGroup"><option value="">Choose one</option><option value="under_18">Under 18</option><option value="18_or_over">18 or over</option></select>
+          <p class="form-note">This is self-declared; we don’t ask for your birth date. It does not change features or options.</p>
+          <label class="agreement"><input id="communityAgreement" type="checkbox"><span>I agree to the <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a> and have read the <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>
+          <label class="authenticator-choice"><input id="communityAuthenticatorOptIn" type="checkbox"><span><strong>Set up an authenticator app</strong><small>Optional. Add a six-digit sign-in code from your authenticator app.</small></span></label>
+        </div>
+        <label for="communityEmail">Email</label>
+        <input id="communityEmail" type="email" autocomplete="email" required placeholder="you@example.com">
+        <label for="communityPassword">Password</label>
+        <input id="communityPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="At least 6 characters">
+        <div id="communityTurnstile" class="turnstile-slot" hidden></div>
+        <p id="communityTurnstileStatus" class="form-note" role="status"></p>
+        <button class="button button-primary auth-submit" id="communityAuthSubmit" type="submit">Sign in</button>
+        <button class="auth-switch" id="communityAuthSwitch" type="button">New to Aether? Create an account</button>
+        <p class="form-note auth-legal">By joining, your profile and community posts are visible to other community members. Supabase records IP addresses for successful account sessions; only the Project Aether Owner can view them in the launcher. Supabase also processes and stores session IPs. Your password is handled by Supabase and never stored by Project Aether. <a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a></p>
       </div>
-      <label for="communityEmail">Email</label>
-      <input id="communityEmail" type="email" autocomplete="email" required placeholder="you@example.com">
-      <label for="communityPassword">Password</label>
-      <input id="communityPassword" type="password" autocomplete="current-password" required minlength="6" placeholder="At least 6 characters">
-      <div id="communityTurnstile" class="turnstile-slot" hidden></div>
-      <p id="communityTurnstileStatus" class="form-note" role="status"></p>
-      <button class="button button-primary auth-submit" id="communityAuthSubmit" type="submit">Sign in</button>
-      <button class="auth-switch" id="communityAuthSwitch" type="button">New to Aether? Create an account</button>
-      <p class="form-note auth-legal">By joining, your profile and community posts are visible to other community members. Supabase records IP addresses for successful account sessions; only the Project Aether Owner can view them in the launcher. Supabase also processes and stores session IPs. Your password is handled by Supabase and never stored by Project Aether. <a href="privacy.html" target="_blank" rel="noopener">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener">Terms</a></p>
+      <section id="communityMfaPanel" class="community-mfa-panel" hidden aria-labelledby="communityMfaTitle">
+        <h3 id="communityMfaTitle">Secure your account.</h3>
+        <p id="communityMfaIntro" class="auth-subtitle">Scan the QR code, then enter the code from your authenticator app.</p>
+        <div id="communityMfaQrWrap" class="community-mfa-qr-wrap" hidden><img id="communityMfaQr" alt="Authenticator setup QR code"><p>Scan this with your authenticator app. If you can’t scan it, enter this setup key manually:</p><code id="communityMfaSecret"></code></div>
+        <div id="communityMfaCodeWrap">
+          <label for="communityMfaCode" id="communityMfaCodeLabel">Six-digit authenticator code</label>
+          <input id="communityMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000">
+        </div>
+        <p id="communityMfaStatus" class="form-note" role="status" aria-live="polite"></p>
+        <button class="button button-primary auth-submit" id="communityMfaVerify" type="button">Verify and enable</button>
+        <button class="auth-switch" id="communityMfaSkip" type="button">I’ll do this later</button>
+        <button class="auth-switch" id="communityMfaCancel" type="button" hidden>Sign out</button>
+      </section>
     </form>
   </dialog>
 </body>
 </html>
+
