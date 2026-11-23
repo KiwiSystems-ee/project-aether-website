@@ -165,6 +165,17 @@ h1, h2, h3, p { margin-top: 0; }
 .partners-hero { background: radial-gradient(ellipse at 78% 45%, rgba(120,214,165,.13), transparent 34%), radial-gradient(ellipse at 20% 90%, rgba(84,134,54,.12), transparent 35%), #131812; }
 .partners-hero h1 span, .partners-content .section-heading h2 span { color: var(--green); }
 .partners-content { padding-top: 88px; }
+.partners-featured { max-width: 850px; margin: 0 auto 88px; }
+.partner-section-heading { margin-bottom: 18px; }
+.partner-section-heading .eyebrow { margin-bottom: 8px; }
+.partner-section-heading h2 { margin: 0; font: 700 clamp(25px, 3vw, 34px)/1.15 var(--display); letter-spacing: -.04em; }
+.partner-profile { min-height: 0; display: flex; gap: 18px; align-items: center; }
+.partner-logo { width: 72px; height: 72px; flex: 0 0 72px; border: 1px solid rgba(183,239,114,.2); border-radius: 14px; object-fit: cover; background: #10130f; }
+.partner-profile-copy .card-index { margin-bottom: 6px; }
+.partner-profile-copy h3 { margin: 0 0 6px; font: 700 20px var(--display); }
+.partner-owner { margin: 0; color: var(--muted); font-size: 12px; }
+.partner-owner strong { margin-left: 5px; color: var(--text); font-weight: 650; }
+.partner-profile-mark { margin-left: auto; color: var(--green); font-size: 22px; }
 .partner-grid .feature-card { min-height: 225px; }
 .partner-cta { margin-top: 24px; }
 .explore-gallery { padding-top: 76px; }
@@ -244,6 +255,7 @@ h1, h2, h3, p { margin-top: 0; }
   .feature-grid { grid-template-columns: 1fr; gap: 10px; }
   .shop-options { grid-template-columns: 1fr; }
   .feature-card { min-height: 0; padding: 22px; }
+  .partners-featured { margin-bottom: 62px; }
   .feature-icon { margin-bottom: 15px; }
   .social-section { padding: 70px 18px; }
   .social-wrap { grid-template-columns: 1fr; gap: 34px; }
