@@ -8,6 +8,11 @@
   const categories = ["General", "Help & Support", "World Showcase", "Add-ons", "Suggestions"];
   let session = readSession();
   let signupMode = false;
+  let authPending = false;
+  let mfaMode = "";
+  let mfaFactorId = "";
+  let mfaChallengeId = "";
+  let mfaChallengeRequired = false;
   let selectedCategory = "All";
   let posts = [];
   let turnstilePromise = null;
@@ -25,6 +30,7 @@
 
   function saveSession(value) {
     session = value?.access_token && value?.user?.id ? value : null;
+    if (!session) authPending = false;
     if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
     else localStorage.removeItem(SESSION_KEY);
     renderAuthState();
@@ -69,7 +75,7 @@
   }
 
   function renderAuthState() {
-    const signedIn = !!session?.user?.id;
+    const signedIn = !!session?.user?.id && !authPending;
     $("communitySignOut").hidden = !signedIn;
     $("communityJoin").textContent = signedIn ? "You’re part of Aether" : "Join the conversation";
     $("communityComposeHint").textContent = signedIn
@@ -77,7 +83,8 @@
       : "Sign in to share with the community.";
     ["communityPostTitle", "communityPostBody", "communityCategory"].forEach(id => { $(id).disabled = !signedIn; });
     $("communityPostForm").querySelector('[type="submit"]').disabled = !signedIn;
-    if (signedIn) setConnection("Signed in as " + (session.user.email || "Aether member"), true);
+    if (authPending) setConnection("Authenticator verification required to continue.");
+    else if (signedIn) setConnection("Signed in as " + (session.user.email || "Aether member"), true);
     else setConnection("Public community · sign in to post", true);
   }
 
@@ -87,16 +94,220 @@
     error.hidden = !message;
   }
 
+  function tokenClaims(accessToken) {
+    try {
+      const payload = accessToken.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const binary = atob(payload.padEnd(Math.ceil(payload.length / 4) * 4, "="));
+      const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+      return {};
+    }
+  }
+
+  async function listTotpFactors() {
+    const result = await api("/auth/v1/factors");
+    const all = result.all || result.factors || [
+      ...(result.totp || []),
+      ...(result.phone || []),
+      ...(result.webauthn || [])
+    ];
+    return {
+      all,
+      totp: result.totp || all.filter(factor => factor.factor_type === "totp" || factor.type === "totp")
+    };
+  }
+
+  function showMfaPanel(mode, message) {
+    mfaMode = mode;
+    $("communityAuthCredentials").hidden = true;
+    $("communityMfaPanel").hidden = false;
+    $("communityMfaQrWrap").hidden = mode !== "setup";
+    $("communityMfaSkip").hidden = mode !== "setup";
+    $("communityMfaCancel").hidden = mode === "setup";
+    $("communityMfaCodeWrap").hidden = mode === "error";
+    $("communityMfaVerify").hidden = mode === "error";
+    $("communityAuthClose").hidden = authPending;
+    $("communityMfaTitle").textContent = mode === "setup"
+      ? "Set up your authenticator."
+      : mode === "error" ? "Couldn’t verify security settings." : "Enter your authenticator code.";
+    $("communityMfaIntro").textContent = message;
+    $("communityMfaCodeLabel").textContent = mode === "setup" ? "Six-digit authenticator code" : "Six-digit sign-in code";
+    $("communityMfaVerify").textContent = mode === "setup" ? "Verify and enable" : "Verify and sign in";
+    $("communityMfaCode").value = "";
+    $("communityMfaStatus").textContent = mode === "setup" ? "Your authenticator secret is shared only with Supabase Auth." : "Enter the current code from your authenticator app.";
+    if (!$("communityAuthDialog").open) $("communityAuthDialog").showModal();
+    if (mode !== "error") $("communityMfaCode").focus();
+  }
+
+  function showAuthCredentials() {
+    mfaMode = "";
+    mfaFactorId = "";
+    mfaChallengeId = "";
+    mfaChallengeRequired = false;
+    $("communityAuthCredentials").hidden = false;
+    $("communityMfaPanel").hidden = true;
+    $("communityAuthClose").hidden = false;
+    $("communityMfaQr").removeAttribute("src");
+    $("communityMfaSecret").textContent = "";
+    $("communityMfaCode").value = "";
+  }
+
+  async function startAuthenticatorSetup(currentFactors = null) {
+    currentFactors = currentFactors || await listTotpFactors();
+    for (const factor of currentFactors.totp.filter(item => item.status === "unverified")) {
+      await api("/auth/v1/factors/" + encodeURIComponent(factor.id), { method: "DELETE" });
+    }
+    const factor = await api("/auth/v1/factors", {
+      method: "POST",
+      body: JSON.stringify({
+        factor_type: "totp",
+        friendly_name: "Project Aether Authenticator",
+        issuer: "Project Aether"
+      })
+    });
+    if (!factor?.id || !factor?.totp?.qr_code || !factor?.totp?.secret) {
+      throw new Error("Supabase did not return the authenticator setup details.");
+    }
+    mfaFactorId = factor.id;
+    const qrCode = factor.totp.qr_code;
+    $("communityMfaQr").src = qrCode.startsWith("data:")
+      ? qrCode
+      : "data:image/svg+xml;charset=utf-8," + encodeURIComponent(qrCode);
+    $("communityMfaSecret").textContent = factor.totp.secret;
+    showMfaPanel("setup", "Scan this QR code, then enter the six-digit code from your authenticator app to finish setup.");
+  }
+
+  async function startAuthenticatorChallenge(factor) {
+    mfaChallengeRequired = true;
+    mfaFactorId = factor.id;
+    const challenge = await api("/auth/v1/factors/" + encodeURIComponent(factor.id) + "/challenge", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+    if (!challenge?.id) throw new Error("Could not start authenticator verification. Please sign in again.");
+    mfaChallengeId = challenge.id;
+    showMfaPanel("challenge", "Your account uses an authenticator app. Enter its current six-digit code to sign in.");
+  }
+
+  async function finishAuthenticatedSignIn() {
+    authPending = false;
+    renderAuthState();
+    if ($("communityAuthDialog").open) $("communityAuthDialog").close();
+    $("communityAuthForm").reset();
+    showAuthCredentials();
+    setSignupMode(false);
+    setConnection("Signed in · welcome to the community", true);
+    if (new URLSearchParams(location.search).get("return") === "download") {
+      window.location.replace("download.html");
+      return;
+    }
+    await loadFeed();
+  }
+
+  async function handleAuthenticatedSession(authSession) {
+    authPending = true;
+    mfaFactorId = "";
+    mfaChallengeId = "";
+    mfaChallengeRequired = false;
+    saveSession(authSession);
+    try {
+      const factors = await listTotpFactors();
+      const verifiedFactor = factors.totp.find(factor => factor.status === "verified");
+      if (verifiedFactor) {
+        if (tokenClaims(authSession.access_token).aal === "aal2") {
+          await finishAuthenticatedSignIn();
+          return;
+        }
+        await startAuthenticatorChallenge(verifiedFactor);
+        return;
+      }
+      if (authSession?.user?.user_metadata?.authenticator_opt_in === true) {
+        await startAuthenticatorSetup(factors);
+        return;
+      }
+      await finishAuthenticatedSignIn();
+    } catch (error) {
+      const mode = mfaChallengeRequired ? "challenge" : "error";
+      showMfaPanel(mode, mode === "challenge"
+        ? "Your authenticator is required to sign in. Check your connection and enter a current code to retry."
+        : "We couldn’t check or set up your authenticator. Sign out and try again.");
+      $("communityMfaStatus").textContent = error.message || "Could not set up the authenticator.";
+      setAuthError("");
+    }
+  }
+
+  async function skipAuthenticatorSetup() {
+    if (!session || mfaMode !== "setup") return;
+    const button = $("communityMfaSkip");
+    button.disabled = true;
+    $("communityMfaStatus").textContent = "Saving your choice…";
+    try {
+      if (mfaFactorId) {
+        try { await api("/auth/v1/factors/" + encodeURIComponent(mfaFactorId), { method: "DELETE" }); } catch { /* An unverified factor is not active. */ }
+      }
+      const user = await api("/auth/v1/user", {
+        method: "PUT",
+        body: JSON.stringify({ data: { authenticator_opt_in: false } })
+      });
+      saveSession({ ...session, user });
+      await finishAuthenticatedSignIn();
+    } catch (error) {
+      $("communityMfaStatus").textContent = "Could not save that choice: " + (error.message || "Please try again.");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function verifyAuthenticatorCode() {
+    const code = $("communityMfaCode").value.replace(/\D/g, "");
+    if (!/^\d{6}$/.test(code)) {
+      $("communityMfaStatus").textContent = "Enter the six-digit code from your authenticator app.";
+      $("communityMfaCode").focus();
+      return;
+    }
+    const button = $("communityMfaVerify");
+    button.disabled = true;
+    $("communityMfaStatus").textContent = "Checking your code…";
+    try {
+      if (!mfaChallengeId) {
+        const challenge = await api("/auth/v1/factors/" + encodeURIComponent(mfaFactorId) + "/challenge", {
+          method: "POST",
+          body: JSON.stringify({})
+        });
+        mfaChallengeId = challenge.id;
+      }
+      const verified = await api("/auth/v1/factors/" + encodeURIComponent(mfaFactorId) + "/verify", {
+        method: "POST",
+        body: JSON.stringify({ challenge_id: mfaChallengeId, code })
+      });
+      if (!verified?.access_token || !verified?.user?.id) {
+        throw new Error("The authenticator was verified, but Supabase did not return a refreshed session. Sign in again to continue.");
+      }
+      mfaChallengeId = "";
+      authPending = false;
+      saveSession(verified);
+      await finishAuthenticatedSignIn();
+    } catch (error) {
+      $("communityMfaStatus").textContent = error.message || "That code could not be verified. Check it and try again.";
+      mfaChallengeId = "";
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function openAuthDialog() {
-    if (session) {
+    if (session && !authPending) {
       $("communityPostTitle").focus();
       $("communityPostTitle").scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     $("communityAuthDialog").showModal();
-    $("communityTurnstile").hidden = false;
-    renderTurnstile();
-    $("communityEmail").focus();
+    if (!authPending) {
+      $("communityTurnstile").hidden = false;
+      renderTurnstile();
+      $("communityEmail").focus();
+    }
   }
 
   function loadTurnstile() {
@@ -328,12 +539,12 @@
       input.maxLength = 4000;
       input.required = true;
       input.placeholder = session ? "Write a reply…" : "Sign in to reply";
-      input.disabled = !session;
+      input.disabled = !session || authPending;
       const submit = document.createElement("button");
       submit.className = "post-action";
       submit.type = "submit";
       submit.textContent = "Reply";
-      submit.disabled = !session;
+      submit.disabled = !session || authPending;
       form.append(input, submit);
       list.appendChild(form);
     } catch (error) {
@@ -357,6 +568,8 @@
       }
     }
     saveSession(null);
+    showAuthCredentials();
+    if ($("communityAuthDialog").open) $("communityAuthDialog").close();
     setConnection("Signed out · browsing as a guest", true);
     await loadFeed();
   }
@@ -385,13 +598,16 @@
               username,
               age_group: $("communityAgeGroup").value,
               accepted_terms_version: "2026-11-15",
-              accepted_terms_at: new Date().toISOString()
+              accepted_terms_at: new Date().toISOString(),
+              authenticator_opt_in: $("communityAuthenticatorOptIn").checked
             },
             gotrue_meta_security: { captcha_token: captchaToken }
           })
         }, false);
         if (!result.access_token) {
-          setAuthError("Check your email to confirm your account, then sign in here.");
+          setAuthError($("communityAuthenticatorOptIn").checked
+            ? "Check your email to confirm your account. After you sign in, we’ll guide you through authenticator setup."
+            : "Check your email to confirm your account, then sign in here.");
           $("communityPassword").value = "";
           return;
         }
@@ -401,16 +617,7 @@
           body: JSON.stringify({ email, password, gotrue_meta_security: { captcha_token: captchaToken } })
         }, false);
       }
-      saveSession(result);
-      if (new URLSearchParams(location.search).get("return") === "download") {
-        window.location.replace("download.html");
-        return;
-      }
-      $("communityAuthDialog").close();
-      $("communityAuthForm").reset();
-      setSignupMode(false);
-      setConnection("Signed in · welcome to the community", true);
-      await loadFeed();
+      await handleAuthenticatedSession(result);
     } catch (error) {
       setAuthError(error.message || "Could not authenticate this account.");
     } finally {
@@ -423,7 +630,7 @@
 
   async function submitPost(event) {
     event.preventDefault();
-    if (!session?.user?.id) return openAuthDialog();
+    if (!session?.user?.id || authPending) return openAuthDialog();
     const title = $("communityPostTitle").value.trim();
     const body = $("communityPostBody").value.trim();
     if (!title || !body) return;
@@ -446,7 +653,7 @@
     } catch (error) {
       setConnection("Post failed: " + error.message);
     } finally {
-      button.disabled = !session;
+      button.disabled = !session || authPending;
     }
   }
 
@@ -455,7 +662,7 @@
     if (!button) return;
     const article = button.closest(".post-card");
     if (!article) return;
-    if (!session?.user?.id) return openAuthDialog();
+    if (!session?.user?.id || authPending) return openAuthDialog();
     if (button.dataset.action === "replies") return loadReplies(article);
     if (button.dataset.action !== "like") return;
     button.disabled = true;
@@ -483,7 +690,7 @@
   async function submitReply(event) {
     if (!event.target.matches(".reply-form")) return;
     event.preventDefault();
-    if (!session?.user?.id) return openAuthDialog();
+    if (!session?.user?.id || authPending) return openAuthDialog();
     const form = event.target;
     const article = form.closest(".post-card");
     const input = form.elements.reply;
@@ -508,8 +715,21 @@
     $("currentYear").textContent = String(new Date().getFullYear());
     $("communityJoin").addEventListener("click", openAuthDialog);
     $("communitySignOut").addEventListener("click", signOut);
-    $("communityAuthClose").addEventListener("click", () => $("communityAuthDialog").close());
+    $("communityAuthClose").addEventListener("click", () => {
+      if (authPending) {
+        if (mfaMode === "setup") void skipAuthenticatorSetup();
+        else void signOut();
+        return;
+      }
+      $("communityAuthDialog").close();
+    });
     $("communityAuthForm").addEventListener("submit", submitAuth);
+    $("communityMfaCode").addEventListener("input", event => {
+      event.currentTarget.value = event.currentTarget.value.replace(/\D/g, "").slice(0, 6);
+    });
+    $("communityMfaVerify").addEventListener("click", verifyAuthenticatorCode);
+    $("communityMfaSkip").addEventListener("click", skipAuthenticatorSetup);
+    $("communityMfaCancel").addEventListener("click", signOut);
     $("communityAuthSwitch").addEventListener("click", () => {
       setAuthError("");
       setSignupMode(!signupMode);
@@ -530,9 +750,18 @@
       renderPosts();
     });
     $("communityAuthDialog").addEventListener("click", event => {
-      if (event.target === $("communityAuthDialog")) $("communityAuthDialog").close();
+      if (event.target === $("communityAuthDialog") && !authPending) $("communityAuthDialog").close();
+    });
+    $("communityAuthDialog").addEventListener("cancel", event => {
+      if (authPending) event.preventDefault();
     });
     renderAuthState();
+    if (session?.user?.id) {
+      authPending = true;
+      renderAuthState();
+      void handleAuthenticatedSession(session);
+      return;
+    }
     if (new URLSearchParams(location.search).get("return") === "download") {
       if (session?.user?.id) {
         window.location.replace("download.html");
@@ -546,3 +775,4 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();
+
