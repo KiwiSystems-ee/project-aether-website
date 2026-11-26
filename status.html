@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10130f">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src 'none'; connect-src 'self' https://zpfmzhtkyxewwikkhwgt.supabase.co">
+  <meta name="description" content="Live service health and incident updates for Project Aether.">
+  <title>Service status — Project Aether</title>
+  <link rel="icon" type="image/png" href="assets/aether-icon.png">
+  <link rel="stylesheet" href="styles.css?v=status-page-1">
+  <script src="config.js"></script>
+  <script defer src="status.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Project Aether home"><img class="brand-icon" src="assets/aether-icon.png" alt=""><span>PROJECT <b>AETHER</b></span></a>
+    <nav class="site-nav" aria-label="Main navigation">
+      <a href="index.html">Home</a><a href="launcher.html">Launcher</a><a class="nav-explore" href="explore.html" aria-label="Explore the launcher" title="Explore the launcher"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4 4"></path></svg><span class="nav-label">Explore</span></a><a href="community.html">Community</a><a href="partners.html">Partners</a><a href="shop.html">Shop / Donate</a><a aria-current="page" href="status.html">Status</a><a class="nav-download" href="download.html">Download <span aria-hidden="true">↓</span></a>
+    </nav>
+  </header>
+  <main class="status-page">
+    <section class="status-hero">
+      <p class="eyebrow"><span class="eyebrow-dot"></span> PROJECT AETHER SERVICE STATUS</p>
+      <h1>Everything you need,<br><span>at a glance.</span></h1>
+      <p>Live health updates for the Aether website, accounts, downloads, and community.</p>
+      <div class="status-overview" id="statusOverview" data-state="loading">
+        <span class="status-overview-mark" aria-hidden="true"></span>
+        <div><strong id="statusOverall">Checking services…</strong><small id="statusUpdated">Loading the latest status.</small></div>
+        <button class="status-refresh" id="statusRefresh" type="button" aria-label="Refresh service status">↻</button>
+      </div>
+      <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+    </section>
+    <section class="status-content">
+      <div class="status-section-heading"><div><p class="card-index">LIVE SERVICE HEALTH</p><h2>Services</h2></div></div>
+      <div id="statusServices" class="status-service-grid" aria-live="polite"><p class="status-empty">Loading services…</p></div>
+      <div class="status-section-heading status-incidents-heading"><div><p class="card-index">WHAT’S CHANGED</p><h2>Incidents &amp; updates</h2></div></div>
+      <div id="statusIncidents" class="status-incident-list" aria-live="polite"><p class="status-empty">Loading updates…</p></div>
+      <p id="statusAuthHint" class="status-auth-hint" hidden><a href="community.html">Sign in to your Aether account</a> to edit the status board if you have Owner or Co-owner access.</p>
+      <section class="status-editor" id="statusEditor" hidden aria-labelledby="statusEditorTitle">
+        <div class="status-editor-heading"><div><p class="card-index">OWNER TOOLS</p><h2 id="statusEditorTitle">Manage status</h2><p>Changes appear on this public page as soon as they’re saved.</p></div><span class="status-editor-badge">OWNER / CO-OWNER</span></div>
+        <section class="status-editor-section" aria-labelledby="statusAddServiceTitle">
+          <h3 id="statusAddServiceTitle">Add a service</h3>
+          <form id="statusServiceForm" class="status-editor-form status-service-form">
+            <label>Service name<input name="name" maxlength="60" required placeholder="e.g. Account sign-in"></label>
+            <label>Description<input name="description" maxlength="160" placeholder="What this service does"></label>
+            <button class="button button-primary" type="submit">Add service</button>
+          </form>
+        </section>
+        <section class="status-editor-section" aria-labelledby="statusNewIncidentTitle">
+          <h3 id="statusNewIncidentTitle">Post an incident</h3>
+          <form id="statusIncidentForm" class="status-editor-form">
+            <label>Incident title<input name="title" maxlength="120" required placeholder="Briefly describe the issue"></label>
+            <div class="status-editor-row">
+              <label>Impact<select name="impact"><option value="minor">Minor</option><option value="major">Major</option><option value="critical">Critical</option></select></label>
+              <label>Initial status<select name="status"><option value="investigating">Investigating</option><option value="identified">Identified</option><option value="monitoring">Monitoring</option></select></label>
+            </div>
+            <label>First update<textarea name="message" maxlength="2000" rows="3" required placeholder="What is happening and what are you doing about it?"></textarea></label>
+            <button class="button button-primary" type="submit">Publish update</button>
+          </form>
+        </section>
+      </section>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <a class="brand" href="index.html"><img class="brand-icon" src="assets/aether-icon.png" alt=""><span>PROJECT <b>AETHER</b></span></a>
+    <p>Your worlds, together.</p>
+    <small><a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a> · © <span id="currentYear"></span> Project Aether · <a href="partners.html">Partners</a></small>
+  </footer>
+</body>
+</html>
